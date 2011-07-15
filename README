@@ -1,0 +1,207 @@
+NAME
+    Gepok - Preforking HTTP server, HTTPS/Unix socket/multiports/PSGI
+
+VERSION
+    version 0.01
+
+SYNOPSIS
+    In your program:
+
+     use Gepok;
+
+     my $d = Gepok->new(
+         http_ports     => [8081, ':8082', '127.0.0.1:8083'], # default none
+         https_ports    => [8084, '0.0.0.0:8085'],            # default none
+         unix_sockets   => ['/var/run/gepok.sock','/tmp/gepok.sock'], # default none
+         #ssl_key_file  => '/path/to/key.pem', # required if https_ports specified
+         #ssl_cert_file => '/path/to/crt.pem', # required if https_ports specified
+         #max_requests_per_child => 100,       # default is 1000
+         #start_servers          => 0,         # default is 3, 0 means don't prefork
+         #daemonize => 0,       # default is 1, 0 = don't go into background
+     );
+
+     # run PSGI application
+     $d->run($app);
+
+DESCRIPTION
+    Gepok creates one or more HTTP::Daemon (for TCP/HTTP), HTTP::Daemon::SSL
+    (for TCP/HTTPS), HTTP::Daemon::UNIX (for Unix socket/HTTP) objects to
+    serve web requests over one or several ports. Some unique features:
+
+    *   HTTPS support out-of-the-box
+
+        This is the primary reason why I wrote Gepok, and why it uses
+        HTTP::Daemon::* family (because there is HTTP::Daemon::SSL). I
+        needed a pure-Perl standalone webserver with SSL support builtin.
+        Other Perl servers usually recommend running behind Nginx or some
+        other external HTTPS proxy.
+
+    *   Preforking
+
+        Good performance and reliability.
+
+    *   Multiple interface and Unix socket
+
+    *   PSGI
+
+        Run any PSGI application/framework.
+
+    *   Runs on Unix platform
+
+    *   Autorefresh
+
+        With some extra effort, can also support autorefresh (restarting
+        itself whenever script/one of loaded Perl modules changes on disk).
+        See SHARYANTO::Proc::Daemon::Prefork for more details.
+
+    This module uses Log::Any for logging.
+
+    This module uses Moo for object system.
+
+ATTRIBUTES
+  name => STR (default is basename of $0)
+    Name of server, for display in process table ('ps ax').
+
+  daemonize => BOOL (default 1)
+    Whether to daemonize (go into background).
+
+  http_ports => ARRAY OF STR (default [])
+    One or more HTTP ports to listen to. Default is none. Each port can be
+    in the form of N, ":N", "0.0.0.0:N" (all means the same thing, to bind
+    to all interfaces) or "1.2.3.4:N" (to bind to a specific network
+    interface).
+
+  https_ports => ARRAY OF STR (default [])
+    Just like http_ports, but for specifying ports for HTTPS.
+
+  unix_sockets => ARRAY OF STR
+    Location of Unix sockets. Default is none, which means not listening to
+    Unix socket. Each element should be an absolute path.
+
+    You must at least specify one ports (either http, https, unix_socket) or
+    Gepok will refuse to run.
+
+  run_as_root => BOOL (default 0)
+    Whether to require running as root.
+
+    Passed to SHARYANTO::Proc::Daemon::Prefork's constructor.
+
+  pid_path => STR (default /var/run/<name>.pid)
+    Location of PID file.
+
+  scoreboard_path => STR (default /var/run/<name>.scoreboard)
+    Location of scoreboard file (used for communication between parent and
+    child processes). If you disable this, autoadjusting number of children
+    won't work (number of children will be kept at 'start_servers').
+
+  error_log_path => STR (default /var/log/<name>-error.log)
+    Location of error log. Default is /var/log/<name>-error.log. It will be
+    opened in append mode.
+
+  access_log_path => STR (default /var/log/<name>-access.log)
+    Location of access log. It will be opened in append mode.
+
+    Default format of access log is the Apache combined format. Override
+    access_log() method if you wan't to customize this.
+
+  ssl_key_file => STR
+    Path to SSL key file, to be passed to HTTP::Daemon::SSL. If you specify
+    one or more HTTPS ports, you need to supply this.
+
+  ssl_cert_file => STR
+    Path to SSL cert file, to be passed to HTTP::Daemon::SSL. If you specify
+    one or more HTTPS ports, you need to supply this.
+
+  start_servers => INT (default 3)
+    Number of children to fork at the start of run. If you set this to 0,
+    the server becomes a nonforking one.
+
+    Tip: You can set start_servers to 0 and 'daemonize' to false for
+    debugging.
+
+  max_clients => INT (default 150)
+    Maximum number of children processes to maintain. If server is busy,
+    number of children will be increased from the original 'start_servers'
+    up until this value.
+
+  max_requests_per_child => INT (default 1000)
+    Number of requests each child will serve until it exists.
+
+METHODS
+  new(%args)
+    Create a new instance of server. %args can be used to set attributes.
+
+  $gepok->run($app)
+    Start/run server and run the PSGI application $app.
+
+  $gepok->start($app)
+    Alias for run().
+
+  $gepok->stop()
+    Stop running server.
+
+  $gepok->restart()
+    Restart server.
+
+  $gepok->is_running() => BOOL
+    Check whether server is running.
+
+  $gepok->before_prefork()
+    This is a hook provided for subclasses to do something before the daemon
+    is preforking. For example, you can preload Perl modules here so that
+    each child doesn't have to load modules separately (= inefficient).
+
+  $gepok->access_log($req, $res, $sock)
+    The default implementation uses the Apache combined format. Override if
+    you want custom format. $res is HTTP::Request object, $res is PSGI
+    response, $sock is the raw socket.
+
+FAQ
+  Why the name Gepok?
+    Gepok is an Indonesian word, meaning bundle. This class bundles one or
+    several HTTP::Daemon::* objects to create a stand-alone web server.
+
+  Performance notes?
+    Thanks to preforking, Gepok has adequate performance and reliability
+    handling multiple clients. But Gepok is not yet performance-tuned, or
+    very performance-oriented to begin with. For convenience Gepok is based
+    on HTTP::Daemon, which is also not too performance-oriented. For each
+    HTTP request, HTTP::Daemon constructs an HTTP::Request object, which
+    copies request body into a scalar (and, for PSGI, needs to be
+    re-presented as a stream using IO::Scalar). Creating other objects like
+    URI and HTTP::Headers are also involved. Gepok also creates file-based
+    scoreboard, which might or might not be a bottleneck.
+
+    Casual benchmarking on my PC shows that Gepok is about 3-4x slower than
+    Starman for "hello world" PSGI.
+
+  How to do autorefresh?
+    Create your own SHARYANTO::Proc::Daemon::Prefork object, setting its
+    'auto_reload_handler' and 'auto_reload_check_every' (along with the
+    other arguments), then pass the object to Gepok's constructor in
+    '_daemon' attribute.
+
+CREDITS
+    Some code portion taken from Starman.
+
+SEE ALSO
+    HTTP server classes used: HTTP::Daemon, HTTP::Daemon::SSL,
+    HTTP::Daemon::UNIX.
+
+    Starman, a high-performance preforking Perl HTTP server which also
+    supports Unix socket and multiple ports, but doesn't support HTTPS
+    out-of-the-box.
+
+    Starlet
+
+    HTTP::Server::PSGI
+
+AUTHOR
+    Steven Haryanto <stevenharyanto@gmail.com>
+
+COPYRIGHT AND LICENSE
+    This software is copyright (c) 2011 by Steven Haryanto.
+
+    This is free software; you can redistribute it and/or modify it under
+    the same terms as the Perl 5 programming language system itself.
+
