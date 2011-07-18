@@ -2,7 +2,7 @@ NAME
     Gepok - Preforking HTTP server, HTTPS/Unix socket/multiports/PSGI
 
 VERSION
-    version 0.01
+    version 0.02
 
 SYNOPSIS
     In your program:
@@ -26,7 +26,7 @@ SYNOPSIS
 DESCRIPTION
     Gepok creates one or more HTTP::Daemon (for TCP/HTTP), HTTP::Daemon::SSL
     (for TCP/HTTPS), HTTP::Daemon::UNIX (for Unix socket/HTTP) objects to
-    serve web requests over one or several ports. Some unique features:
+    serve web requests over one or several ports. Some features:
 
     *   HTTPS support out-of-the-box
 
@@ -47,12 +47,6 @@ DESCRIPTION
         Run any PSGI application/framework.
 
     *   Runs on Unix platform
-
-    *   Autorefresh
-
-        With some extra effort, can also support autorefresh (restarting
-        itself whenever script/one of loaded Perl modules changes on disk).
-        See SHARYANTO::Proc::Daemon::Prefork for more details.
 
     This module uses Log::Any for logging.
 
@@ -78,7 +72,7 @@ ATTRIBUTES
     Location of Unix sockets. Default is none, which means not listening to
     Unix socket. Each element should be an absolute path.
 
-    You must at least specify one ports (either http, https, unix_socket) or
+    You must at least specify one port (either http, https, unix_socket) or
     Gepok will refuse to run.
 
   run_as_root => BOOL (default 0)
@@ -86,19 +80,19 @@ ATTRIBUTES
 
     Passed to SHARYANTO::Proc::Daemon::Prefork's constructor.
 
-  pid_path => STR (default /var/run/<name>.pid)
+  pid_path => STR (default /var/run/<name>.pid or ~/<name>.pid)
     Location of PID file.
 
-  scoreboard_path => STR (default /var/run/<name>.scoreboard)
+  scoreboard_path => STR (default /var/run/<name>.scoreboard or ~/<name>.scoreboard)
     Location of scoreboard file (used for communication between parent and
     child processes). If you disable this, autoadjusting number of children
     won't work (number of children will be kept at 'start_servers').
 
-  error_log_path => STR (default /var/log/<name>-error.log)
+  error_log_path => STR (default /var/log/<name>-error.log or ~/<name>-error.log)
     Location of error log. Default is /var/log/<name>-error.log. It will be
     opened in append mode.
 
-  access_log_path => STR (default /var/log/<name>-access.log)
+  access_log_path => STR (default /var/log/<name>-access.log or ~/<name>-access.log)
     Location of access log. It will be opened in append mode.
 
     Default format of access log is the Apache combined format. Override
@@ -174,12 +168,6 @@ FAQ
 
     Casual benchmarking on my PC shows that Gepok is about 3-4x slower than
     Starman for "hello world" PSGI.
-
-  How to do autorefresh?
-    Create your own SHARYANTO::Proc::Daemon::Prefork object, setting its
-    'auto_reload_handler' and 'auto_reload_check_every' (along with the
-    other arguments), then pass the object to Gepok's constructor in
-    '_daemon' attribute.
 
 CREDITS
     Some code portion taken from Starman.

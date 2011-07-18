@@ -5,8 +5,9 @@ use strict;
 use warnings;
 use Log::Any '$log';
 
-our $VERSION = '0.01'; # VERSION
+our $VERSION = '0.02'; # VERSION
 
+use File::HomeDir;
 use HTTP::Daemon;
 use HTTP::Daemon::SSL;
 use HTTP::Daemon::UNIX;
@@ -50,17 +51,21 @@ has _client                => (is => 'rw'); # store client data
 sub BUILD {
     my ($self) = @_;
 
+    my $is_root = $> ? 0 : 1;
+    my $log_dir = $is_root ? "/var/log" : File::HomeDir->my_home;
+    my $run_dir = $is_root ? "/var/run" : File::HomeDir->my_home;
+
     unless ($self->error_log_path) {
-        $self->error_log_path("/var/log/".$self->name."-error.log");
+        $self->error_log_path($log_dir."/".$self->name."-error.log");
     }
     unless ($self->access_log_path) {
-        $self->access_log_path("/var/log/".$self->name."-access.log");
+        $self->access_log_path($log_dir."/".$self->name."-access.log");
     }
     unless ($self->pid_path) {
-        $self->pid_path("/var/run/".$self->name.".pid");
+        $self->pid_path($run_dir."/".$self->name.".pid");
     }
     unless ($self->scoreboard_path) {
-        $self->scoreboard_path("/var/run/".$self->name.".scoreboard");
+        $self->scoreboard_path($run_dir."/".$self->name.".scoreboard");
     }
     unless ($self->_daemon) {
         my $daemon = SHARYANTO::Proc::Daemon::Prefork->new(
@@ -82,7 +87,6 @@ sub BUILD {
 
 sub run {
     my ($self, $app) = @_;
-    $log->trace("x");
     $self->_app($app);
     $self->_daemon->run;
 }
@@ -232,6 +236,13 @@ sub _finalize_response {
         push @headers, "$k: $v";
         $headers{lc $k} = $v;
     }
+    # set content-length
+    if (defined($res->[2]) && !exists($headers{'content-length'})) {
+        my $cl = 0;
+        for (@{$res->[2]}) { $cl += length }
+        push @headers, "Content-Length: $cl";
+        $headers{'content-length'} = $cl;
+    }
 
     if ($protocol eq 'HTTP/1.1') {
         if (!exists $headers{'content-length'}) {
@@ -276,10 +287,10 @@ sub _finalize_response {
             $res->[2],
             sub {
                 my $buffer = $_[0];
+                my $len = length $buffer;
+                $body_size += $len;
                 if ($chunked) {
-                    my $len = length $buffer;
                     return unless $len;
-                    $body_size += $len;
                     $buffer = sprintf("%x", $len) . $CRLF . $buffer . $CRLF;
                 }
                 syswrite $sock, $buffer;
@@ -290,10 +301,10 @@ sub _finalize_response {
         return Plack::Util::inline_object(
             write => sub {
                 my $buffer = $_[0];
+                my $len = length $buffer;
+                $body_size += $len;
                 if ($chunked) {
-                    my $len = length $buffer;
                     return unless $len;
-                    $body_size += $len;
                     $buffer = sprintf( "%x", $len ) . $CRLF . $buffer . $CRLF;
                 }
                 syswrite $sock, $buffer;
@@ -328,6 +339,7 @@ sub _prepare_env {
     my $is_ssl  = $sock->isa('HTTP::Daemon::SSL');
     my $uri = $req->uri->as_string;
     my $qs  = $uri =~ /.\?(.*)/ ? $1 : '';
+    #warn "uri=$uri, qs=$qs\n";
     my $env = {
         REQUEST_METHOD  => $req->method,
         SCRIPT_NAME     => '',
@@ -442,7 +454,7 @@ Gepok - Preforking HTTP server, HTTPS/Unix socket/multiports/PSGI
 
 =head1 VERSION
 
-version 0.01
+version 0.02
 
 =head1 SYNOPSIS
 
@@ -468,7 +480,7 @@ In your program:
 
 Gepok creates one or more L<HTTP::Daemon> (for TCP/HTTP), L<HTTP::Daemon::SSL>
 (for TCP/HTTPS), L<HTTP::Daemon::UNIX> (for Unix socket/HTTP) objects to serve
-web requests over one or several ports. Some unique features:
+web requests over one or several ports. Some features:
 
 =over 4
 
@@ -490,12 +502,6 @@ Good performance and reliability.
 Run any PSGI application/framework.
 
 =item * Runs on Unix platform
-
-=item * Autorefresh
-
-With some extra effort, can also support autorefresh (restarting itself whenever
-script/one of loaded Perl modules changes on disk). See
-L<SHARYANTO::Proc::Daemon::Prefork> for more details.
 
 =back
 
@@ -528,7 +534,7 @@ Just like http_ports, but for specifying ports for HTTPS.
 Location of Unix sockets. Default is none, which means not listening to Unix
 socket. Each element should be an absolute path.
 
-You must at least specify one ports (either http, https, unix_socket) or Gepok
+You must at least specify one port (either http, https, unix_socket) or Gepok
 will refuse to run.
 
 =head2 run_as_root => BOOL (default 0)
@@ -537,22 +543,22 @@ Whether to require running as root.
 
 Passed to SHARYANTO::Proc::Daemon::Prefork's constructor.
 
-=head2 pid_path => STR (default /var/run/<name>.pid)
+=head2 pid_path => STR (default /var/run/<name>.pid or ~/<name>.pid)
 
 Location of PID file.
 
-=head2 scoreboard_path => STR (default /var/run/<name>.scoreboard)
+=head2 scoreboard_path => STR (default /var/run/<name>.scoreboard or ~/<name>.scoreboard)
 
 Location of scoreboard file (used for communication between parent and child
 processes). If you disable this, autoadjusting number of children won't work
 (number of children will be kept at 'start_servers').
 
-=head2 error_log_path => STR (default /var/log/<name>-error.log)
+=head2 error_log_path => STR (default /var/log/<name>-error.log or ~/<name>-error.log)
 
 Location of error log. Default is /var/log/<name>-error.log. It will be opened
 in append mode.
 
-=head2 access_log_path => STR (default /var/log/<name>-access.log)
+=head2 access_log_path => STR (default /var/log/<name>-access.log or ~/<name>-access.log)
 
 Location of access log. It will be opened in append mode.
 
@@ -647,12 +653,6 @@ a bottleneck.
 
 Casual benchmarking on my PC shows that Gepok is about 3-4x slower than
 L<Starman> for "hello world" PSGI.
-
-=head2 How to do autorefresh?
-
-Create your own L<SHARYANTO::Proc::Daemon::Prefork> object, setting its
-'auto_reload_handler' and 'auto_reload_check_every' (along with the other
-arguments), then pass the object to Gepok's constructor in '_daemon' attribute.
 
 =head1 CREDITS
 
