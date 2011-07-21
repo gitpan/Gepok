@@ -2,7 +2,7 @@ NAME
     Gepok - Preforking HTTP server, HTTPS/Unix socket/multiports/PSGI
 
 VERSION
-    version 0.03
+    version 0.04
 
 SYNOPSIS
     In your program:
@@ -120,6 +120,14 @@ ATTRIBUTES
 
   max_requests_per_child => INT (default 1000)
     Number of requests each child will serve until it exists.
+
+  product_name => STR
+    Used in 'Server' HTTP response header (<product_name>/<version>).
+    Defaults to class name, e.g. "Gepok".
+
+  product_version => STR
+    Used in 'Server' HTTP response header (<product_name>/<version>).
+    Defaults to $VERSION package variable.
 
 METHODS
   new(%args)

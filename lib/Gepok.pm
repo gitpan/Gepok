@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Log::Any '$log';
 
-our $VERSION = '0.03'; # VERSION
+our $VERSION = '0.04'; # VERSION
 
 use File::HomeDir;
 use HTTP::Daemon;
@@ -48,6 +48,8 @@ has _daemon                => (is => 'rw'); # SHARYANTO::Proc::Daemon::Prefork
 has _server_socks          => (is => 'rw'); # store server sockets
 has _app                   => (is => 'rw'); # store PSGI app
 has _client                => (is => 'rw'); # store client data
+has product_name           => (is => 'rw');
+has product_version        => (is => 'rw');
 
 sub BUILD {
     my ($self) = @_;
@@ -67,6 +69,13 @@ sub BUILD {
     }
     unless ($self->scoreboard_path) {
         $self->scoreboard_path($run_dir."/".$self->name.".scoreboard");
+    }
+    unless ($self->product_name) {
+        $self->product_name(ref($self));
+    }
+    unless (defined $self->product_version) {
+        no strict;
+        $self->product_version(${ref($self)."::VERSION"} // "0.0");
     }
     unless ($self->_daemon) {
         my $daemon = SHARYANTO::Proc::Daemon::Prefork->new(
@@ -232,11 +241,8 @@ sub _finalize_response {
 
     my(@headers, %headers);
     push @headers, "$protocol $status $message";
-    {
-        no strict;
-        no warnings;
-        push @headers, "Server: ".ref($self)."/".${ref($self)."::VERSION"};
-    }
+    push @headers, "Server: ".
+            $self->product_name."/".$self->product_version;
 
     # Switch on Transfer-Encoding: chunked if we don't know Content-Length.
     my $chunked;
@@ -244,13 +250,6 @@ sub _finalize_response {
         next if $k eq 'Connection';
         push @headers, "$k: $v";
         $headers{lc $k} = $v;
-    }
-    # set content-length
-    if (defined($res->[2]) && !exists($headers{'content-length'})) {
-        my $cl = 0;
-        for (@{$res->[2]}) { $cl += length }
-        push @headers, "Content-Length: $cl";
-        $headers{'content-length'} = $cl;
     }
 
     if ($protocol eq 'HTTP/1.1') {
@@ -325,7 +324,6 @@ sub _finalize_response {
         );
     }
     $self->{_res_body_size} = $body_size;
-    $sock->close() unless $self->_client->{keepalive};
 }
 
 # run PSGI app, send PSGI response to client, and return it
@@ -358,6 +356,7 @@ sub _prepare_env {
         $qs = $2;
     } else {
         $pi = $uri;
+        $qs = "";
     }
     $pi = uri_unescape($pi);
 
@@ -369,9 +368,9 @@ sub _prepare_env {
         REQUEST_URI     => $uri,
         QUERY_STRING    => $qs,
         SERVER_PORT     => $is_unix ? 0 : $sock->sockport,
-        SERVER_NAME     => $is_unix ? $sock->hostpath : $sock->sockaddr,
+        SERVER_NAME     => $is_unix ? $sock->hostpath : $sock->sockhost,
         SERVER_PROTOCOL => 'HTTP/1.1',
-        REMOTE_ADDR     => $is_unix ? 'localhost' : $sock->peeraddr,
+        REMOTE_ADDR     => $is_unix ? 'localhost' : $sock->peerhost,
 
         'psgi.version'         => [ 1, 1 ],
         'psgi.input'           => IO::Scalar->new(\($req->{_content})),
@@ -387,14 +386,14 @@ sub _prepare_env {
         'psgix.input.buffered' => Plack::Util::TRUE,
         'psgix.harakiri'       => Plack::Util::TRUE,
     };
+
     # HTTP_ vars
     my $rh = $req->headers;
     for my $hn ($rh->header_field_names) {
-        my $hun = uc($hn); $hun =~ s/[^A-Z0-9]/_/g;
-        next if $hun =~ /\A(?:CONTENT_(?:TYPE|LENGTH))\z/;
-        $env->{"HTTP_$hun"} = join(", ", $rh->header($hn));
+        my $key = uc($hn); $key =~ s/[^A-Z0-9]/_/g;
+        $key = "HTTP_$key" unless $key =~ /\A(?:CONTENT_(?:TYPE|LENGTH))\z/;
+        $env->{$key} = join(", ", $rh->header($hn));
     }
-    # XXX keep alive
 
     $env;
 }
@@ -477,7 +476,7 @@ Gepok - Preforking HTTP server, HTTPS/Unix socket/multiports/PSGI
 
 =head1 VERSION
 
-version 0.03
+version 0.04
 
 =head1 SYNOPSIS
 
@@ -614,6 +613,16 @@ value.
 =head2 max_requests_per_child => INT (default 1000)
 
 Number of requests each child will serve until it exists.
+
+=head2 product_name => STR
+
+Used in 'Server' HTTP response header (<product_name>/<version>). Defaults to
+class name, e.g. "Gepok".
+
+=head2 product_version => STR
+
+Used in 'Server' HTTP response header (<product_name>/<version>). Defaults to
+$VERSION package variable.
 
 =head1 METHODS
 
