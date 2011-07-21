@@ -17,7 +17,7 @@ my %module_build_args = (
     'Steven Haryanto <stevenharyanto@gmail.com>'
   ],
   'dist_name' => 'Gepok',
-  'dist_version' => '0.02',
+  'dist_version' => '0.03',
   'license' => 'perl',
   'module_name' => 'Gepok',
   'recommends' => {},
@@ -33,8 +33,9 @@ my %module_build_args = (
     'Log::Any' => '0',
     'Moo' => '0',
     'Plack' => '0',
-    'SHARYANTO::Proc::Daemon::Prefork' => '0.03',
+    'SHARYANTO::Proc::Daemon::Prefork' => '0.04',
     'Test::More' => '0.96',
+    'URI::Escape' => '0',
     'perl' => '5.010000'
   },
   'script_files' => []

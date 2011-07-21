@@ -2,7 +2,7 @@ NAME
     Gepok - Preforking HTTP server, HTTPS/Unix socket/multiports/PSGI
 
 VERSION
-    version 0.02
+    version 0.03
 
 SYNOPSIS
     In your program:
@@ -75,7 +75,7 @@ ATTRIBUTES
     You must at least specify one port (either http, https, unix_socket) or
     Gepok will refuse to run.
 
-  run_as_root => BOOL (default 0)
+  require_root => BOOL (default 0)
     Whether to require running as root.
 
     Passed to SHARYANTO::Proc::Daemon::Prefork's constructor.

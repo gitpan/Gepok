@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Log::Any '$log';
 
-our $VERSION = '0.02'; # VERSION
+our $VERSION = '0.03'; # VERSION
 
 use File::HomeDir;
 use HTTP::Daemon;
@@ -20,6 +20,7 @@ use IO::Socket qw(:crlf);
 use Plack::Util;
 use POSIX;
 use SHARYANTO::Proc::Daemon::Prefork;
+use URI::Escape;
 
 use Moo;
 
@@ -38,7 +39,7 @@ has access_log_path        => (is => 'rw');
 has http_ports             => (is => 'rw', default => sub{[]});
 has https_ports            => (is => 'rw', default => sub{[]});
 has unix_sockets           => (is => 'rw', default => sub{[]});
-has run_as_root            => (is => 'rw', default => sub{0});
+has require_root           => (is => 'rw', default => sub{0});
 has ssl_key_file           => (is => 'rw');
 has ssl_cert_file          => (is => 'rw');
 has start_servers          => (is => 'rw', default => sub{3});
@@ -78,7 +79,7 @@ sub BUILD {
             prefork                 => $self->start_servers,
             after_init              => sub { $self->_after_init },
             main_loop               => sub { $self->_main_loop },
-            run_as_root             => $self->run_as_root,
+            require_root            => $self->require_root,
             # currently auto reloading is turned off
         );
         $self->_daemon($daemon);
@@ -118,12 +119,14 @@ sub _after_init {
     my ($self) = @_;
 
     my @server_socks;
+    my @server_sock_infos;
 
     for my $path (@{$self->unix_sockets}) {
         $log->infof("Binding to Unix socket %s (http) ...", $path);
         my $sock = HTTP::Daemon::UNIX->new(Local=>$path);
         die "Unable to bind to Unix socket $path" unless $sock;
         push @server_socks, $sock;
+        push @server_sock_infos, "$path (unix)";
     }
 
     for my $port (@{$self->http_ports}) {
@@ -141,6 +144,7 @@ sub _after_init {
         my $sock = HTTP::Daemon->new(%args);
         die "Unable to bind to TCP socket $port" unless $sock;
         push @server_socks, $sock;
+        push @server_sock_infos, "$port (tcp)";
     }
 
     for my $port (@{$self->https_ports}) {
@@ -167,12 +171,14 @@ sub _after_init {
         die "Unable to bind to TCP socket $port, common cause include ".
             "port taken or missing server key/cert file" unless $sock;
         push @server_socks, $sock;
+        push @server_sock_infos, "$port (tcp, https)";
     }
 
     die "Please specify at least one HTTP/HTTPS/Unix socket port"
         unless @server_socks;
 
     $self->_server_socks(\@server_socks);
+    warn "Will be binding to ".join(", ", @server_sock_infos)."\n";
     $self->before_prefork();
 }
 
@@ -211,6 +217,8 @@ sub _main_loop {
 sub _finalize_response {
     my($self, $env, $res, $sock) = @_;
 
+    $self->{_sock_peerhost} = $sock->peerhost; # cache first before close
+
     $self->_client({});
     if ($env->{'psgix.harakiri.commit'}) {
         $self->_client->{keepalive} = 0;
@@ -220,6 +228,7 @@ sub _finalize_response {
     my $protocol = $env->{SERVER_PROTOCOL};
     my $status   = $res->[0];
     my $message  = status_message($status);
+    $self->{_res_status} = $status;
 
     my(@headers, %headers);
     push @headers, "$protocol $status $message";
@@ -316,6 +325,7 @@ sub _finalize_response {
         );
     }
     $self->{_res_body_size} = $body_size;
+    $sock->close() unless $self->_client->{keepalive};
 }
 
 # run PSGI app, send PSGI response to client, and return it
@@ -325,7 +335,11 @@ sub _handle_psgi {
     my $env = $self->_prepare_env($req, $sock);
     my $res = Plack::Util::run_app($self->_app, $env);
     eval {
-        $self->_finalize_response($env, $res, $sock);
+        if (ref $res eq 'CODE') {
+            $res->(sub { $self->_finalize_response($env, $_[0], $sock) });
+        } else {
+            $self->_finalize_response($env, $res, $sock);
+        }
     }; # trap i/o error when sending response
 
     $res;
@@ -338,12 +352,20 @@ sub _prepare_env {
     my $is_unix = $sock->isa('HTTP::Daemon::UNIX');
     my $is_ssl  = $sock->isa('HTTP::Daemon::SSL');
     my $uri = $req->uri->as_string;
-    my $qs  = $uri =~ /.\?(.*)/ ? $1 : '';
+    my ($qs, $pi);
+    if ($uri =~ /(.*)\?(.*)/) {
+        $pi = $1;
+        $qs = $2;
+    } else {
+        $pi = $uri;
+    }
+    $pi = uri_unescape($pi);
+
     #warn "uri=$uri, qs=$qs\n";
     my $env = {
         REQUEST_METHOD  => $req->method,
         SCRIPT_NAME     => '',
-        PATH_INFO       => '/',
+        PATH_INFO       => $pi,
         REQUEST_URI     => $uri,
         QUERY_STRING    => $qs,
         SERVER_PORT     => $is_unix ? 0 : $sock->sockport,
@@ -368,7 +390,8 @@ sub _prepare_env {
     # HTTP_ vars
     my $rh = $req->headers;
     for my $hn ($rh->header_field_names) {
-        my $hun = uc($hn); $hun =~ s/^[A-Z0-9]/_/g;
+        my $hun = uc($hn); $hun =~ s/[^A-Z0-9]/_/g;
+        next if $hun =~ /\A(?:CONTENT_(?:TYPE|LENGTH))\z/;
         $env->{"HTTP_$hun"} = join(", ", $rh->header($hn));
     }
     # XXX keep alive
@@ -379,7 +402,7 @@ sub _prepare_env {
 sub _set_label_serving {
     my ($self, $sock) = @_;
 
-    my $is_unix = $sock->isa('HTTP::Daemon::UNIX');
+    my $is_unix = $sock && $sock->isa('HTTP::Daemon::UNIX');
 
     if ($is_unix) {
         my $sock_path = $sock->hostpath;
@@ -419,17 +442,17 @@ sub __escape_quote {
 }
 
 sub access_log {
-    my ($self, $req, $res, $sock) = @_;
+    my ($self, $req, $sock) = @_;
 
     my $reqh = $req->headers;
     my $logline = sprintf(
         "%s - %s [%s] \"%s %s\" %d %s \"%s\" \"%s\"\n",
-        $sock->peerhost,
+        $self->{_sock_peerhost},
         "-", # XXX auth user
         POSIX::strftime("%d/%m/%Y:%H:%M:%S +0000", gmtime($self->{_req_time})),
         $req->method,
         __escape_quote($req->uri->as_string),
-        $res->[0],
+        $self->{_res_status},
         $self->{_res_body_size} // "-",
         scalar($reqh->header("referer")) // "-",
         scalar($reqh->header("user-agent")) // "-",
@@ -454,7 +477,7 @@ Gepok - Preforking HTTP server, HTTPS/Unix socket/multiports/PSGI
 
 =head1 VERSION
 
-version 0.02
+version 0.03
 
 =head1 SYNOPSIS
 
@@ -537,7 +560,7 @@ socket. Each element should be an absolute path.
 You must at least specify one port (either http, https, unix_socket) or Gepok
 will refuse to run.
 
-=head2 run_as_root => BOOL (default 0)
+=head2 require_root => BOOL (default 0)
 
 Whether to require running as root.
 
