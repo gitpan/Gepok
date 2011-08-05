@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Log::Any '$log';
 
-our $VERSION = '0.04'; # VERSION
+our $VERSION = '0.05'; # VERSION
 
 use File::HomeDir;
 use HTTP::Daemon;
@@ -129,8 +129,11 @@ sub _after_init {
 
     my @server_socks;
     my @server_sock_infos;
+    my $ary;
 
-    for my $path (@{$self->unix_sockets}) {
+    $ary = $self->unix_sockets;
+    if (defined($ary) && ref($ary) ne 'ARRAY') { $ary = [split /\s*,\s*/,$ary] }
+    for my $path (@$ary) {
         $log->infof("Binding to Unix socket %s (http) ...", $path);
         my $sock = HTTP::Daemon::UNIX->new(Local=>$path);
         die "Unable to bind to Unix socket $path" unless $sock;
@@ -138,7 +141,9 @@ sub _after_init {
         push @server_sock_infos, "$path (unix)";
     }
 
-    for my $port (@{$self->http_ports}) {
+    $ary = $self->http_ports;
+    if (defined($ary) && ref($ary) ne 'ARRAY') { $ary = [split /\s*,\s*/,$ary] }
+    for my $port (@$ary) {
         my %args = (Reuse => 1);
         if ($port =~ /^(?:0\.0\.0\.0)?:?(\d+)$/) {
             $args{LocalPort} = $1;
@@ -156,7 +161,9 @@ sub _after_init {
         push @server_sock_infos, "$port (tcp)";
     }
 
-    for my $port (@{$self->https_ports}) {
+    $ary = $self->https_ports;
+    if (defined($ary) && ref($ary) ne 'ARRAY') { $ary = [split /\s*,\s*/,$ary] }
+    for my $port (@$ary) {
         my %args = (Reuse => 1);
         # currently commented out, hangs with larger POST
         #$args{Timeout} = 180;
@@ -442,13 +449,14 @@ sub __escape_quote {
 
 sub access_log {
     my ($self, $req, $sock) = @_;
+    return unless $self->access_log_path;
 
     my $reqh = $req->headers;
     my $logline = sprintf(
         "%s - %s [%s] \"%s %s\" %d %s \"%s\" \"%s\"\n",
         $self->{_sock_peerhost},
         "-", # XXX auth user
-        POSIX::strftime("%d/%m/%Y:%H:%M:%S +0000", gmtime($self->{_req_time})),
+        POSIX::strftime("%d/%b/%Y:%H:%M:%S +0000", gmtime($self->{_req_time})),
         $req->method,
         __escape_quote($req->uri->as_string),
         $self->{_res_status},
@@ -458,14 +466,14 @@ sub access_log {
     );
 
     if ($self->daemonize) {
-        # XXX rotating?
         syswrite($self->_daemon->{_access_log}, $logline);
-    } else {
+    } elsif (!defined($ENV{PLACK_ENV})) {
         warn $logline;
     }
 }
 
 1;
+# ABSTRACT: Preforking HTTP server, HTTPS/Unix socket/multiports/PSGI
 
 
 =pod
@@ -476,14 +484,18 @@ Gepok - Preforking HTTP server, HTTPS/Unix socket/multiports/PSGI
 
 =head1 VERSION
 
-version 0.04
+version 0.05
 
 =head1 SYNOPSIS
 
-In your program:
+To run with plackup:
 
+ % plackup -s Gepok
+
+To run on our own:
+
+ #!/usr/bin/perl
  use Gepok;
-
  my $d = Gepok->new(
      http_ports     => [8081, ':8082', '127.0.0.1:8083'], # default none
      https_ports    => [8084, '0.0.0.0:8085'],            # default none
@@ -494,15 +506,11 @@ In your program:
      #start_servers          => 0,         # default is 3, 0 means don't prefork
      #daemonize => 0,       # default is 1, 0 = don't go into background
  );
-
- # run PSGI application
- $d->run($app);
+ $d->run($psgi_app);
 
 =head1 DESCRIPTION
 
-Gepok creates one or more L<HTTP::Daemon> (for TCP/HTTP), L<HTTP::Daemon::SSL>
-(for TCP/HTTPS), L<HTTP::Daemon::UNIX> (for Unix socket/HTTP) objects to serve
-web requests over one or several ports. Some features:
+Gepok is a PSGI server implementation. Its features are:
 
 =over 4
 
@@ -527,6 +535,8 @@ Run any PSGI application/framework.
 
 =back
 
+Gepok can run under B<plackup>, or standalone.
+
 This module uses L<Log::Any> for logging.
 
 This module uses L<Moo> for object system.
@@ -547,14 +557,18 @@ One or more HTTP ports to listen to. Default is none. Each port can be in the
 form of N, ":N", "0.0.0.0:N" (all means the same thing, to bind to all
 interfaces) or "1.2.3.4:N" (to bind to a specific network interface).
 
+A string is also accepted, it will be split (delimiter ,) beforehand.
+
 =head2 https_ports => ARRAY OF STR (default [])
 
 Just like http_ports, but for specifying ports for HTTPS.
 
-=head2 unix_sockets => ARRAY OF STR
+=head2 unix_sockets => ARRAY OF STR (default [])
 
 Location of Unix sockets. Default is none, which means not listening to Unix
 socket. Each element should be an absolute path.
+
+A string is also accepted, it will be split (delimiter ,) beforehand.
 
 You must at least specify one port (either http, https, unix_socket) or Gepok
 will refuse to run.
@@ -586,6 +600,9 @@ Location of access log. It will be opened in append mode.
 
 Default format of access log is the Apache combined format. Override
 access_log() method if you wan't to customize this.
+
+If Gepok is run Under plackup, by default it will not write an access log file
+(unless you specify this attribute) since plackup already writes an access log.
 
 =head2 ssl_key_file => STR
 
@@ -668,8 +685,8 @@ raw socket.
 
 =head2 Why the name Gepok?
 
-Gepok is an Indonesian word, meaning bundle. This class bundles one or several
-HTTP::Daemon::* objects to create a stand-alone web server.
+Gepok is an Indonesian word, meaning bundle/bunch. This class bundles one or
+several HTTP::Daemon::* objects to create a stand-alone web server.
 
 =head2 Performance notes?
 
@@ -691,6 +708,8 @@ L<Starman> for "hello world" PSGI.
 Some code portion taken from Starman.
 
 =head1 SEE ALSO
+
+L<PSGI> and L<Plack>.
 
 HTTP server classes used: L<HTTP::Daemon>, L<HTTP::Daemon::SSL>,
 L<HTTP::Daemon::UNIX>.
@@ -717,5 +736,4 @@ the same terms as the Perl 5 programming language system itself.
 
 
 __END__
-# ABSTRACT: Preforking HTTP server, HTTPS/Unix socket/multiports/PSGI
 

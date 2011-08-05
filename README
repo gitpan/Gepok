@@ -2,13 +2,17 @@ NAME
     Gepok - Preforking HTTP server, HTTPS/Unix socket/multiports/PSGI
 
 VERSION
-    version 0.04
+    version 0.05
 
 SYNOPSIS
-    In your program:
+    To run with plackup:
 
+     % plackup -s Gepok
+
+    To run on our own:
+
+     #!/usr/bin/perl
      use Gepok;
-
      my $d = Gepok->new(
          http_ports     => [8081, ':8082', '127.0.0.1:8083'], # default none
          https_ports    => [8084, '0.0.0.0:8085'],            # default none
@@ -19,14 +23,10 @@ SYNOPSIS
          #start_servers          => 0,         # default is 3, 0 means don't prefork
          #daemonize => 0,       # default is 1, 0 = don't go into background
      );
-
-     # run PSGI application
-     $d->run($app);
+     $d->run($psgi_app);
 
 DESCRIPTION
-    Gepok creates one or more HTTP::Daemon (for TCP/HTTP), HTTP::Daemon::SSL
-    (for TCP/HTTPS), HTTP::Daemon::UNIX (for Unix socket/HTTP) objects to
-    serve web requests over one or several ports. Some features:
+    Gepok is a PSGI server implementation. Its features are:
 
     *   HTTPS support out-of-the-box
 
@@ -48,6 +48,8 @@ DESCRIPTION
 
     *   Runs on Unix platform
 
+    Gepok can run under plackup, or standalone.
+
     This module uses Log::Any for logging.
 
     This module uses Moo for object system.
@@ -65,12 +67,16 @@ ATTRIBUTES
     to all interfaces) or "1.2.3.4:N" (to bind to a specific network
     interface).
 
+    A string is also accepted, it will be split (delimiter ,) beforehand.
+
   https_ports => ARRAY OF STR (default [])
     Just like http_ports, but for specifying ports for HTTPS.
 
-  unix_sockets => ARRAY OF STR
+  unix_sockets => ARRAY OF STR (default [])
     Location of Unix sockets. Default is none, which means not listening to
     Unix socket. Each element should be an absolute path.
+
+    A string is also accepted, it will be split (delimiter ,) beforehand.
 
     You must at least specify one port (either http, https, unix_socket) or
     Gepok will refuse to run.
@@ -97,6 +103,10 @@ ATTRIBUTES
 
     Default format of access log is the Apache combined format. Override
     access_log() method if you wan't to customize this.
+
+    If Gepok is run Under plackup, by default it will not write an access
+    log file (unless you specify this attribute) since plackup already
+    writes an access log.
 
   ssl_key_file => STR
     Path to SSL key file, to be passed to HTTP::Daemon::SSL. If you specify
@@ -160,8 +170,9 @@ METHODS
 
 FAQ
   Why the name Gepok?
-    Gepok is an Indonesian word, meaning bundle. This class bundles one or
-    several HTTP::Daemon::* objects to create a stand-alone web server.
+    Gepok is an Indonesian word, meaning bundle/bunch. This class bundles
+    one or several HTTP::Daemon::* objects to create a stand-alone web
+    server.
 
   Performance notes?
     Thanks to preforking, Gepok has adequate performance and reliability
@@ -181,6 +192,8 @@ CREDITS
     Some code portion taken from Starman.
 
 SEE ALSO
+    PSGI and Plack.
+
     HTTP server classes used: HTTP::Daemon, HTTP::Daemon::SSL,
     HTTP::Daemon::UNIX.
 
