@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Log::Any '$log';
 
-our $VERSION = '0.06'; # VERSION
+our $VERSION = '0.07'; # VERSION
 
 use File::HomeDir;
 use HTTP::Daemon;
@@ -484,7 +484,7 @@ Gepok - PSGI server with built-in HTTPS support, Unix sockets, preforking
 
 =head1 VERSION
 
-version 0.06
+version 0.07
 
 =head1 SYNOPSIS
 
@@ -699,6 +699,9 @@ a bottleneck.
 Casual benchmarking on my PC shows that Gepok is about 3-4x slower than
 L<Starman> for "hello world" PSGI.
 
+I am using Gepok primarily with L<Sub::Spec::HTTP::Server> for serving remote
+API requests, in which HTTPS support is required.
+
 =head1 CREDITS
 
 Some code portion taken from Starman.
@@ -710,12 +713,10 @@ L<PSGI> and L<Plack>.
 HTTP server classes used: L<HTTP::Daemon>, L<HTTP::Daemon::SSL>,
 L<HTTP::Daemon::UNIX>.
 
-L<Starman>, a high-performance preforking Perl HTTP server which also supports
-Unix socket and multiple ports, but doesn't support HTTPS out-of-the-box.
-
-L<Starlet>
-
-L<HTTP::Server::PSGI>
+Alternative PSGI servers: L<Starman> (a high-performance preforking Perl
+HTTP/1.1 server which also supports Unix socket and multiple ports, but doesn't
+support HTTPS out-of-the-box), L<Starlet> (preforking and HTTP/1.1 but no
+multiple ports/Unix sockets/HTTPS).
 
 =head1 AUTHOR
 

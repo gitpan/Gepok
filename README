@@ -3,7 +3,7 @@ NAME
     preforking
 
 VERSION
-    version 0.06
+    version 0.07
 
 SYNOPSIS
     To run with plackup:
@@ -185,6 +185,9 @@ FAQ
     Casual benchmarking on my PC shows that Gepok is about 3-4x slower than
     Starman for "hello world" PSGI.
 
+    I am using Gepok primarily with Sub::Spec::HTTP::Server for serving
+    remote API requests, in which HTTPS support is required.
+
 CREDITS
     Some code portion taken from Starman.
 
@@ -194,13 +197,10 @@ SEE ALSO
     HTTP server classes used: HTTP::Daemon, HTTP::Daemon::SSL,
     HTTP::Daemon::UNIX.
 
-    Starman, a high-performance preforking Perl HTTP server which also
-    supports Unix socket and multiple ports, but doesn't support HTTPS
-    out-of-the-box.
-
-    Starlet
-
-    HTTP::Server::PSGI
+    Alternative PSGI servers: Starman (a high-performance preforking Perl
+    HTTP/1.1 server which also supports Unix socket and multiple ports, but
+    doesn't support HTTPS out-of-the-box), Starlet (preforking and HTTP/1.1
+    but no multiple ports/Unix sockets/HTTPS).
 
 AUTHOR
     Steven Haryanto <stevenharyanto@gmail.com>
