@@ -12,12 +12,12 @@ my %module_build_args = (
   'configure_requires' => {
     'Module::Build' => '0.3601'
   },
-  'dist_abstract' => 'Preforking HTTP server, HTTPS/Unix socket/multiports/PSGI',
+  'dist_abstract' => 'PSGI server with built-in HTTPS support, Unix sockets, preforking',
   'dist_author' => [
     'Steven Haryanto <stevenharyanto@gmail.com>'
   ],
   'dist_name' => 'Gepok',
-  'dist_version' => '0.05',
+  'dist_version' => '0.06',
   'license' => 'perl',
   'module_name' => 'Gepok',
   'recommends' => {},

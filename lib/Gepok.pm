@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Log::Any '$log';
 
-our $VERSION = '0.05'; # VERSION
+our $VERSION = '0.06'; # VERSION
 
 use File::HomeDir;
 use HTTP::Daemon;
@@ -473,26 +473,26 @@ sub access_log {
 }
 
 1;
-# ABSTRACT: Preforking HTTP server, HTTPS/Unix socket/multiports/PSGI
+# ABSTRACT: PSGI server with built-in HTTPS support, Unix sockets, preforking
 
 
 =pod
 
 =head1 NAME
 
-Gepok - Preforking HTTP server, HTTPS/Unix socket/multiports/PSGI
+Gepok - PSGI server with built-in HTTPS support, Unix sockets, preforking
 
 =head1 VERSION
 
-version 0.05
+version 0.06
 
 =head1 SYNOPSIS
 
 To run with plackup:
 
- % plackup -s Gepok
+ % plackup -s Gepok --daemonize
 
-To run on our own:
+To run standalone:
 
  #!/usr/bin/perl
  use Gepok;
@@ -516,20 +516,16 @@ Gepok is a PSGI server implementation. Its features are:
 
 =item * HTTPS support out-of-the-box
 
-This is the primary reason why I wrote Gepok, and why it uses HTTP::Daemon::*
-family (because there is HTTP::Daemon::SSL). I needed a pure-Perl standalone
-webserver with SSL support builtin. Other Perl servers usually recommend running
-behind Nginx or some other external HTTPS proxy.
+This is the primary (if not the only) reason why I wrote Gepok, and why it uses
+HTTP::Daemon::* family (because there is HTTP::Daemon::SSL). I needed a
+pure-Perl standalone webserver with SSL support builtin. Other Perl servers
+usually recommend running behind Nginx or some other external HTTPS proxy.
 
 =item * Preforking
 
 Good performance and reliability.
 
 =item * Multiple interface and Unix socket
-
-=item * PSGI
-
-Run any PSGI application/framework.
 
 =item * Runs on Unix platform
 
