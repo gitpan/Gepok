@@ -3,7 +3,7 @@ NAME
     preforking
 
 VERSION
-    version 0.09
+    version 0.10
 
 SYNOPSIS
     To run with plackup:
@@ -50,6 +50,21 @@ DESCRIPTION
     This module uses Log::Any for logging.
 
     This module uses Moo for object system.
+
+PSGI ENVIRONMENT
+    Gepok adds the following server-specific keys in the PSGI environment
+    passed to application/middleware:
+
+    *   gepok.connect_time
+
+        A 2-element arrayref (produced by Time::HiRes' gettimeofday()),
+        clocked at connect time.
+
+    *   gepok.finish_request_time
+
+        A 2-element arrayref (produced by Time::HiRes' gettimeofday()),
+        clocked right after Gepok has received the complete request from
+        client.
 
 ATTRIBUTES
   name => STR (default is basename of $0)

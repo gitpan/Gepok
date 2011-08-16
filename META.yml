@@ -32,4 +32,4 @@ requires:
 resources:
   homepage: http://search.cpan.org/dist/Gepok/
   repository: http://github.com/sharyanto/perl-Gepok
-version: 0.09
+version: 0.10
