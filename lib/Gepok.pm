@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Log::Any '$log';
 
-our $VERSION = '0.11'; # VERSION
+our $VERSION = '0.12'; # VERSION
 
 use File::HomeDir;
 use HTTP::Daemon;
@@ -532,7 +532,7 @@ Gepok - PSGI server with built-in HTTPS support, Unix sockets, preforking
 
 =head1 VERSION
 
-version 0.11
+version 0.12
 
 =head1 SYNOPSIS
 
@@ -635,6 +635,11 @@ A string is also accepted, it will be split (delimiter ,) beforehand.
 
 You must at least specify one port (either http, https, unix_socket) or Gepok
 will refuse to run.
+
+=head2 timeout => BOOL (default 120)
+
+Socket timeout. Will be passed as Timeout option to HTTP::Daemon's constructor
+(which will be passed to IO::Socket).
 
 =head2 require_root => BOOL (default 0)
 

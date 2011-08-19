@@ -38,7 +38,7 @@ Plack::Handler::Gepok
 
 =head1 VERSION
 
-version 0.11
+version 0.12
 
 =head1 SYNOPSIS
 

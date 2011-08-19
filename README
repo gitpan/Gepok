@@ -3,7 +3,7 @@ NAME
     preforking
 
 VERSION
-    version 0.11
+    version 0.12
 
 SYNOPSIS
     To run with plackup:
@@ -92,6 +92,10 @@ ATTRIBUTES
 
     You must at least specify one port (either http, https, unix_socket) or
     Gepok will refuse to run.
+
+  timeout => BOOL (default 120)
+    Socket timeout. Will be passed as Timeout option to HTTP::Daemon's
+    constructor (which will be passed to IO::Socket).
 
   require_root => BOOL (default 0)
     Whether to require running as root.
