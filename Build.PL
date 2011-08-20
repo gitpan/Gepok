@@ -17,7 +17,7 @@ my %module_build_args = (
     'Steven Haryanto <stevenharyanto@gmail.com>'
   ],
   'dist_name' => 'Gepok',
-  'dist_version' => '0.12',
+  'dist_version' => '0.13',
   'license' => 'perl',
   'module_name' => 'Gepok',
   'recommends' => {},
@@ -27,7 +27,7 @@ my %module_build_args = (
     'File::HomeDir' => '0',
     'HTTP::Daemon' => '0',
     'HTTP::Daemon::SSL' => '0',
-    'HTTP::Daemon::UNIX' => '0',
+    'HTTP::Daemon::UNIX' => '0.03',
     'HTTP::Date' => '0',
     'HTTP::Status' => '0',
     'IO::Scalar' => '0',

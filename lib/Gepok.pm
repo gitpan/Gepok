@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Log::Any '$log';
 
-our $VERSION = '0.12'; # VERSION
+our $VERSION = '0.13'; # VERSION
 
 use File::HomeDir;
 use HTTP::Daemon;
@@ -13,7 +13,6 @@ use HTTP::Daemon::SSL;
 use HTTP::Daemon::UNIX;
 use HTTP::Date qw(time2str);
 use HTTP::Status qw(status_message);
-#use IO::Handle::Record; # needed for something, forgot what
 use IO::Scalar;
 use IO::Select;
 use IO::Socket qw(:crlf);
@@ -246,7 +245,8 @@ sub _main_loop {
 sub _finalize_response {
     my($self, $env, $res, $sock) = @_;
 
-    $self->{_sock_peerhost} = $sock->peerhost; # cache first before close
+    # cache first before close
+    $self->{_sock_peerhost} = ${*$sock}{httpd_daemon}->peerhost // "127.0.0.1";
 
     if ($env->{'psgix.harakiri.commit'}) {
         $self->{_client_keepalive} = 0;
@@ -393,8 +393,9 @@ sub _handle_psgi {
 sub _prepare_env {
     my ($self, $req, $sock) = @_;
 
-    my $is_unix = $sock->isa('HTTP::Daemon::UNIX');
-    my $is_ssl  = $sock->isa('HTTP::Daemon::SSL');
+    my $httpd   = ${*$sock}{httpd_daemon};
+    my $is_unix = $httpd->isa('HTTP::Daemon::UNIX');
+    my $is_ssl  = $httpd->isa('HTTP::Daemon::SSL');
     my $uri = $req->uri->as_string;
     my ($qs, $pi);
     if ($uri =~ /(.*)\?(.*)/) {
@@ -413,10 +414,10 @@ sub _prepare_env {
         PATH_INFO       => $pi,
         REQUEST_URI     => $uri,
         QUERY_STRING    => $qs,
-        SERVER_PORT     => $is_unix ? 0 : $sock->sockport,
-        SERVER_NAME     => $is_unix ? $sock->hostpath : $sock->sockhost,
+        SERVER_PORT     => $is_unix ? 0 : $httpd->sockport,
+        SERVER_NAME     => $is_unix ? $httpd->hostpath : $httpd->sockhost,
         SERVER_PROTOCOL => 'HTTP/1.1',
-        REMOTE_ADDR     => $is_unix ? 'localhost' : $sock->peerhost,
+        REMOTE_ADDR     => $is_unix ? 'localhost' : $httpd->peerhost,
 
         'psgi.version'         => [ 1, 1 ],
         'psgi.input'           => IO::Scalar->new(\($req->{_content})),
@@ -437,8 +438,14 @@ sub _prepare_env {
         'gepok.connect_time'        => $self->{_connect_time},
         'gepok.finish_request_time' => $self->{_finish_req_time},
         'gepok.client_protocol'     => $self->{_client_proto},
+        'gepok.socket'              => $sock,
     };
     $env->{HTTPS} = 'on' if $is_ssl;
+    if ($is_unix) {
+        $env->{'gepok.unix_socket'} = 1;
+    } else {
+        #
+    }
 
     # HTTP_ vars
     my $rh = $req->headers;
@@ -456,19 +463,20 @@ sub _set_label_serving {
     # sock can be undef when client timed out
     return unless $sock;
 
-    my $is_unix = $sock->isa('HTTP::Daemon::UNIX');
+    my $httpd = ${*$sock}{httpd_daemon};
+    my $is_unix = $httpd->isa('HTTP::Daemon::UNIX');
 
     if ($is_unix) {
-        my $sock_path = $sock->hostpath;
-        my ($pid, $uid, $gid) = $sock->peercred;
+        my $sock_path = $httpd->hostpath;
+        my ($pid, $uid, $gid) = $httpd->peercred;
         $log->trace("Unix socket info: path=$sock_path, ".
                         "pid=$pid, uid=$uid, gid=$gid");
         $self->_daemon->set_label("serving unix (pid=$pid, uid=$uid, ".
                                       "path=$sock_path)");
     } else {
-        my $is_ssl = $sock->isa('HTTP::Daemon::SSL') ? 1:0;
+        my $is_ssl = $httpd->isa('HTTP::Daemon::SSL') ? 1:0;
         my $server_port = $sock->sockport;
-        my $remote_ip   = $sock->peerhost;
+        my $remote_ip   = $sock->peerhost // "127.0.0.1";
         my $remote_port = $sock->peerport;
         if ($log->is_trace) {
             $log->trace(join("",
@@ -513,7 +521,6 @@ sub access_log {
         scalar($reqh->header("referer")) // "-",
         scalar($reqh->header("user-agent")) // "-",
     );
-
     if ($self->daemonize) {
         syswrite($self->_daemon->{_access_log}, $logline);
     } elsif (!defined($ENV{PLACK_ENV})) {
@@ -532,7 +539,7 @@ Gepok - PSGI server with built-in HTTPS support, Unix sockets, preforking
 
 =head1 VERSION
 
-version 0.12
+version 0.13
 
 =head1 SYNOPSIS
 
@@ -592,15 +599,33 @@ application/middleware:
 
 =over 4
 
-=item * gepok.connect_time
+=item * gepok.connect_time => ARRAY
 
 A 2-element arrayref (produced by Time::HiRes' gettimeofday()), clocked at
 connect time.
 
-=item * gepok.finish_request_time
+=item * gepok.finish_request_time => ARRAY
 
 A 2-element arrayref (produced by Time::HiRes' gettimeofday()), clocked right
 after Gepok has received the complete request from client.
+
+=item * gepok.client_protocol => STR
+
+HTTP protocol version sent by client, e.g. "HTTP/1.0" or "HTTP/1.1". This can be
+used to avoid sending HTTP/1.1 response to HTTP/1.0 or older clients.
+
+=item * gepok.socket => OBJ
+
+Raw HTTP::Daemon::ClientConn socket. Can be used to get information about
+socket, e.g. peerport(), peercred(), etc. Should not be used to read/write data
+(use PSGI way for that, e.g. $env->{'psgi.input'}, returning PSGI response,
+etc).
+
+=item * gepok.unix_socket => BOOL
+
+A boolean value which is set to true if client connects via Unix socket. (Note,
+you can get Unix socket path from $env->{SERVER_NAME} or
+$env->{'gepok.socket'}).
 
 =back
 

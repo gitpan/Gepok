@@ -3,7 +3,7 @@ NAME
     preforking
 
 VERSION
-    version 0.12
+    version 0.13
 
 SYNOPSIS
     To run with plackup:
@@ -55,16 +55,35 @@ PSGI ENVIRONMENT
     Gepok adds the following server-specific keys in the PSGI environment
     passed to application/middleware:
 
-    *   gepok.connect_time
+    *   gepok.connect_time => ARRAY
 
         A 2-element arrayref (produced by Time::HiRes' gettimeofday()),
         clocked at connect time.
 
-    *   gepok.finish_request_time
+    *   gepok.finish_request_time => ARRAY
 
         A 2-element arrayref (produced by Time::HiRes' gettimeofday()),
         clocked right after Gepok has received the complete request from
         client.
+
+    *   gepok.client_protocol => STR
+
+        HTTP protocol version sent by client, e.g. "HTTP/1.0" or "HTTP/1.1".
+        This can be used to avoid sending HTTP/1.1 response to HTTP/1.0 or
+        older clients.
+
+    *   gepok.socket => OBJ
+
+        Raw HTTP::Daemon::ClientConn socket. Can be used to get information
+        about socket, e.g. peerport(), peercred(), etc. Should not be used
+        to read/write data (use PSGI way for that, e.g.
+        $env->{'psgi.input'}, returning PSGI response, etc).
+
+    *   gepok.unix_socket => BOOL
+
+        A boolean value which is set to true if client connects via Unix
+        socket. (Note, you can get Unix socket path from $env->{SERVER_NAME}
+        or $env->{'gepok.socket'}).
 
 ATTRIBUTES
   name => STR (default is basename of $0)

@@ -18,7 +18,7 @@ requires:
   File::HomeDir: 0
   HTTP::Daemon: 0
   HTTP::Daemon::SSL: 0
-  HTTP::Daemon::UNIX: 0
+  HTTP::Daemon::UNIX: 0.03
   HTTP::Date: 0
   HTTP::Status: 0
   IO::Scalar: 0
@@ -32,4 +32,4 @@ requires:
 resources:
   homepage: http://search.cpan.org/dist/Gepok/
   repository: http://github.com/sharyanto/perl-Gepok
-version: 0.12
+version: 0.13
