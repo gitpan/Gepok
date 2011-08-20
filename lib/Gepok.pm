@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Log::Any '$log';
 
-our $VERSION = '0.13'; # VERSION
+our $VERSION = '0.14'; # VERSION
 
 use File::HomeDir;
 use HTTP::Daemon;
@@ -303,8 +303,8 @@ sub _finalize_response {
     #warn "chunked=$chunked, keep-alive=$keepalive, client_proto=$client_proto";
 
     if ($client_proto le 'HTTP/1.0' && $keepalive && !defined($cl)) {
-        # if HTTP/1.0 client requests keep-alive (like Wget), we need Content-Length
-        # so client knows when response ends.
+        # if HTTP/1.0 client requests keep-alive (like Wget), we need
+        # Content-Length so client knows when response ends.
 
         # produce body first so we can calculate content-length
         $self->_finalize_body($env, $res, $sock, 1);
@@ -513,7 +513,7 @@ sub access_log {
         $self->{_sock_peerhost},
         "-", # XXX auth user
         POSIX::strftime("%d/%b/%Y:%H:%M:%S +0000",
-                        gmtime($self->{_finish_req_time})),
+                        gmtime($self->{_finish_req_time}[0])),
         $req->method,
         __escape_quote($req->uri->as_string),
         $self->{_res_status},
@@ -539,7 +539,7 @@ Gepok - PSGI server with built-in HTTPS support, Unix sockets, preforking
 
 =head1 VERSION
 
-version 0.13
+version 0.14
 
 =head1 SYNOPSIS
 
