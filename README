@@ -3,7 +3,7 @@ NAME
     preforking
 
 VERSION
-    version 0.14
+    version 0.15
 
 SYNOPSIS
     To run with plackup:

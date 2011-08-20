@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Log::Any '$log';
 
-our $VERSION = '0.14'; # VERSION
+our $VERSION = '0.15'; # VERSION
 
 use File::HomeDir;
 use HTTP::Daemon;
@@ -417,7 +417,7 @@ sub _prepare_env {
         SERVER_PORT     => $is_unix ? 0 : $httpd->sockport,
         SERVER_NAME     => $is_unix ? $httpd->hostpath : $httpd->sockhost,
         SERVER_PROTOCOL => 'HTTP/1.1',
-        REMOTE_ADDR     => $is_unix ? 'localhost' : $httpd->peerhost,
+        REMOTE_ADDR     => $is_unix ? '127.0.0.1' : $sock->peerhost,
 
         'psgi.version'         => [ 1, 1 ],
         'psgi.input'           => IO::Scalar->new(\($req->{_content})),
@@ -539,7 +539,7 @@ Gepok - PSGI server with built-in HTTPS support, Unix sockets, preforking
 
 =head1 VERSION
 
-version 0.14
+version 0.15
 
 =head1 SYNOPSIS
 
