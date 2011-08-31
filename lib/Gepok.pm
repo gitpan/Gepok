@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Log::Any '$log';
 
-our $VERSION = '0.15'; # VERSION
+our $VERSION = '0.16'; # VERSION
 
 use File::HomeDir;
 use HTTP::Daemon;
@@ -227,10 +227,13 @@ sub _main_loop {
                 num_reqs => $i,
                 state => "R",
             });
-            while (my $req = $sock->get_request) {
+            while (1) {
+                $self->{_start_req_time} = [gettimeofday];
+                my $req = $sock->get_request;
+                $self->{_finish_req_time} = [gettimeofday];
+                last unless $req;
                 $self->{_client_proto} =
                     $sock->proto_ge("1.1") ? "HTTP/1.1" : "HTTP/1.0";
-                $self->{_finish_req_time} = [gettimeofday];
                 $self->_daemon->update_scoreboard({state => "W"});
                 my $res = $self->_handle_psgi($req, $sock);
                 $self->access_log($req, $res, $sock);
@@ -436,6 +439,7 @@ sub _prepare_env {
         # additional/server-specific
         'gepok'                     => 1,
         'gepok.connect_time'        => $self->{_connect_time},
+        'gepok.start_request_time'  => $self->{_start_req_time},
         'gepok.finish_request_time' => $self->{_finish_req_time},
         'gepok.client_protocol'     => $self->{_client_proto},
         'gepok.socket'              => $sock,
@@ -539,7 +543,7 @@ Gepok - PSGI server with built-in HTTPS support, Unix sockets, preforking
 
 =head1 VERSION
 
-version 0.15
+version 0.16
 
 =head1 SYNOPSIS
 
