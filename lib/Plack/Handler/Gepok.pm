@@ -6,6 +6,8 @@ use warnings;
 
 use Gepok;
 
+our $VERSION = '0.17'; # VERSION
+
 sub new {
     my $class = shift;
     my $self = bless { @_ }, $class;
@@ -27,26 +29,25 @@ sub run {
 }
 
 1;
+# ABSTRACT: Plack adapter for Gepok
 
 
 
+
+__END__
 =pod
 
 =head1 NAME
 
-Plack::Handler::Gepok
+Plack::Handler::Gepok - Plack adapter for Gepok
 
 =head1 VERSION
 
-version 0.16
+version 0.17
 
 =head1 SYNOPSIS
 
   plackup -s Gepok
-
-=head1 NAME
-
-Plack::Handler::Gepok - Plack adapter for Gepok
 
 =head1 SEE ALSO
 
@@ -58,15 +59,10 @@ Steven Haryanto <stevenharyanto@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2011 by Steven Haryanto.
+This software is copyright (c) 2012 by Steven Haryanto.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
-
-
-__END__
-
-
 

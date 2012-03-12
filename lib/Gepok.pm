@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Log::Any '$log';
 
-our $VERSION = '0.16'; # VERSION
+our $VERSION = '0.17'; # VERSION
 
 use File::HomeDir;
 use HTTP::Daemon;
@@ -75,7 +75,7 @@ sub BUILD {
     }
     unless (defined $self->product_version) {
         no strict;
-        $self->product_version($Gepok::VERSION // "0.0");
+        $self->product_version($Gepok::VERSION // "?");
     }
     unless ($self->_daemon) {
         my $daemon = SHARYANTO::Proc::Daemon::Prefork->new(
@@ -369,7 +369,16 @@ sub _write_sock {
     if ($save) {
         push @{$self->{_body}}, $buffer;
     } else {
-        syswrite $sock, $buffer;
+        # large $buffer might need to be written in several steps, especially in
+        # SSL sockets which might have smaller buffer size (like 16k)
+        my $tot_written = 0;
+        while (1) {
+            my $written = syswrite $sock, $buffer, length($buffer)-$tot_written,
+                $tot_written;
+            # XXX what to do on error, i.e. $written is undef?
+            $tot_written += $written;
+            last unless $tot_written < length($buffer);
+        }
     }
 }
 
@@ -512,6 +521,19 @@ sub access_log {
     return unless $self->access_log_path;
 
     my $reqh = $req->headers;
+    if ($log->is_trace) {
+        $log->tracef("\$self->{sock_peerhost}=%s, (gmtime(\$self->{_finish_req_time}))[0]=%s, \$req->method=%s, \$req->uri->as_string=%s, \$self->{_res_status}=%s, \$self->{res_content_length}=%s, ".
+                         "\$reqh->header('referer')=%s, \$reqh->header('user-agent')=%s",
+                     $self->{_sock_peerhost},
+                     (gmtime($self->{_finish_req_time}))[0],
+                     $req->method,
+                     $req->uri->as_string,
+                     $self->{_res_status},
+                     $self->{_res_content_length},
+                     scalar($reqh->header("referer")),
+                     scalar($reqh->header("user-agent")),
+                 );
+    }
     my $logline = sprintf(
         "%s - %s [%s] \"%s %s\" %d %s \"%s\" \"%s\"\n",
         $self->{_sock_peerhost},
@@ -543,7 +565,7 @@ Gepok - PSGI server with built-in HTTPS support, Unix sockets, preforking
 
 =head1 VERSION
 
-version 0.16
+version 0.17
 
 =head1 SYNOPSIS
 
@@ -800,8 +822,8 @@ a bottleneck.
 Casual benchmarking on my PC shows that Gepok is about 3-4x slower than
 L<Starman> for "hello world" PSGI.
 
-I am using Gepok primarily with L<Sub::Spec::HTTP::Server> for serving remote
-API requests, in which HTTPS support is required.
+I am using Gepok primarily with L<Perinci::Access::HTTP::Server> for serving
+remote API requests, in which HTTPS support is required.
 
 =head1 CREDITS
 
@@ -825,7 +847,7 @@ Steven Haryanto <stevenharyanto@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2011 by Steven Haryanto.
+This software is copyright (c) 2012 by Steven Haryanto.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

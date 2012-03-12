@@ -3,7 +3,7 @@ NAME
     preforking
 
 VERSION
-    version 0.16
+    version 0.17
 
 SYNOPSIS
     To run with plackup:
@@ -223,8 +223,8 @@ FAQ
     Casual benchmarking on my PC shows that Gepok is about 3-4x slower than
     Starman for "hello world" PSGI.
 
-    I am using Gepok primarily with Sub::Spec::HTTP::Server for serving
-    remote API requests, in which HTTPS support is required.
+    I am using Gepok primarily with Perinci::Access::HTTP::Server for
+    serving remote API requests, in which HTTPS support is required.
 
 CREDITS
     Some code portion taken from Starman.
@@ -244,7 +244,7 @@ AUTHOR
     Steven Haryanto <stevenharyanto@gmail.com>
 
 COPYRIGHT AND LICENSE
-    This software is copyright (c) 2011 by Steven Haryanto.
+    This software is copyright (c) 2012 by Steven Haryanto.
 
     This is free software; you can redistribute it and/or modify it under
     the same terms as the Perl 5 programming language system itself.
