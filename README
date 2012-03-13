@@ -3,7 +3,7 @@ NAME
     preforking
 
 VERSION
-    version 0.17
+    version 0.18
 
 SYNOPSIS
     To run with plackup:
@@ -225,6 +225,11 @@ FAQ
 
     I am using Gepok primarily with Perinci::Access::HTTP::Server for
     serving remote API requests, in which HTTPS support is required.
+
+  "Bad arg length for Socket::inet_ntoa, length is 16, should be 4" error
+    At the time of this writing, HTTP::Daemon (6.01) might throw this error
+    message when receiving request. For patches/solutions to overcome this
+    problem, see: https://rt.cpan.org/Ticket/Display.html?id=71395
 
 CREDITS
     Some code portion taken from Starman.

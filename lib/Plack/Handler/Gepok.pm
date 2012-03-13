@@ -6,7 +6,7 @@ use warnings;
 
 use Gepok;
 
-our $VERSION = '0.17'; # VERSION
+our $VERSION = '0.18'; # VERSION
 
 sub new {
     my $class = shift;
@@ -43,7 +43,7 @@ Plack::Handler::Gepok - Plack adapter for Gepok
 
 =head1 VERSION
 
-version 0.17
+version 0.18
 
 =head1 SYNOPSIS
 
