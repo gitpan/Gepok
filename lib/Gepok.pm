@@ -5,10 +5,11 @@ use strict;
 use warnings;
 use Log::Any '$log';
 
-our $VERSION = '0.18'; # VERSION
+our $VERSION = '0.19'; # VERSION
 
 use File::HomeDir;
 use HTTP::Daemon;
+use HTTP::Daemon::patch::ipv6;
 use HTTP::Daemon::SSL;
 use HTTP::Daemon::UNIX;
 use HTTP::Date qw(time2str);
@@ -565,7 +566,7 @@ Gepok - PSGI server with built-in HTTPS support, Unix sockets, preforking
 
 =head1 VERSION
 
-version 0.18
+version 0.19
 
 =head1 SYNOPSIS
 

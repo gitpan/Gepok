@@ -17,7 +17,7 @@ my %module_build_args = (
     "Steven Haryanto <stevenharyanto\@gmail.com>"
   ],
   "dist_name" => "Gepok",
-  "dist_version" => "0.18",
+  "dist_version" => "0.19",
   "license" => "perl",
   "module_name" => "Gepok",
   "recommends" => {},
@@ -28,6 +28,7 @@ my %module_build_args = (
     "HTTP::Daemon" => 0,
     "HTTP::Daemon::SSL" => 0,
     "HTTP::Daemon::UNIX" => "0.03",
+    "HTTP::Daemon::patch::ipv6" => 0,
     "HTTP::Date" => 0,
     "HTTP::Status" => 0,
     "IO::Scalar" => 0,
