@@ -1,0 +1,61 @@
+{
+   "abstract" : "PSGI server with built-in HTTPS support, Unix sockets, preforking",
+   "author" : [
+      "Steven Haryanto <stevenharyanto@gmail.com>"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "Dist::Zilla version 4.300006, CPAN::Meta::Converter version 2.113640",
+   "license" : [
+      "perl_5"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "Gepok",
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "Module::Build" : "0.3601"
+         }
+      },
+      "configure" : {
+         "requires" : {
+            "Module::Build" : "0.3601"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "Class::XSAccessor" : 0,
+            "File::HomeDir" : 0,
+            "HTTP::Daemon" : 0,
+            "HTTP::Daemon::SSL" : 0,
+            "HTTP::Daemon::UNIX" : "0.03",
+            "HTTP::Daemon::patch::ipv6" : 0,
+            "HTTP::Date" : 0,
+            "HTTP::Status" : 0,
+            "IO::Scalar" : 0,
+            "Log::Any" : 0,
+            "Moo" : 0,
+            "Plack" : 0,
+            "SHARYANTO::Proc::Daemon::Prefork" : "0.05",
+            "URI::Escape" : 0,
+            "perl" : "5.010000"
+         }
+      },
+      "test" : {
+         "requires" : {
+            "Test::More" : "0.96"
+         }
+      }
+   },
+   "release_status" : "stable",
+   "resources" : {
+      "homepage" : "http://search.cpan.org/dist/Gepok/",
+      "repository" : {
+         "url" : "http://github.com/sharyanto/perl-Gepok"
+      }
+   },
+   "version" : "0.20"
+}
+

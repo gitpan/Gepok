@@ -7,7 +7,8 @@ use Module::Build 0.3601;
 
 my %module_build_args = (
   "build_requires" => {
-    "Module::Build" => "0.3601"
+    "Module::Build" => "0.3601",
+    "Test::More" => "0.96"
   },
   "configure_requires" => {
     "Module::Build" => "0.3601"
@@ -17,7 +18,7 @@ my %module_build_args = (
     "Steven Haryanto <stevenharyanto\@gmail.com>"
   ],
   "dist_name" => "Gepok",
-  "dist_version" => "0.19",
+  "dist_version" => "0.20",
   "license" => "perl",
   "module_name" => "Gepok",
   "recommends" => {},
@@ -36,7 +37,6 @@ my %module_build_args = (
     "Moo" => 0,
     "Plack" => 0,
     "SHARYANTO::Proc::Daemon::Prefork" => "0.05",
-    "Test::More" => "0.96",
     "URI::Escape" => 0,
     "perl" => "5.010000"
   },
