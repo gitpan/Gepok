@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Log::Any '$log';
 
-our $VERSION = '0.20'; # VERSION
+our $VERSION = '0.21'; # VERSION
 
 use File::HomeDir;
 use HTTP::Daemon;
@@ -45,6 +45,7 @@ has require_root           => (is => 'rw', default => sub{0});
 has ssl_key_file           => (is => 'rw');
 has ssl_cert_file          => (is => 'rw');
 has start_servers          => (is => 'rw', default => sub{3});
+has max_clients            => (is => 'rw', default=>sub{150});
 has max_requests_per_child => (is => 'rw', default=>sub{1000});
 has _daemon                => (is => 'rw'); # SHARYANTO::Proc::Daemon::Prefork
 has _server_socks          => (is => 'rw'); # store server sockets
@@ -94,6 +95,7 @@ sub BUILD {
             scoreboard_path         => $self->scoreboard_path,
             daemonize               => $self->daemonize,
             prefork                 => $self->start_servers,
+            max_children            => $self->max_clients,
             after_init              => sub { $self->_after_init },
             main_loop               => sub { $self->_main_loop },
             require_root            => $self->require_root,
@@ -143,7 +145,6 @@ sub _after_init {
     if (defined($ary) && ref($ary) ne 'ARRAY') { $ary = [split /\s*,\s*/,$ary] }
     for my $path (@$ary) {
         my %args;
-        $args{Reuse}   = 1;
         $args{Timeout} = $self->timeout;
         $args{Local}   = $path;
         $log->infof("Binding to Unix socket %s (http) ...", $path);
@@ -159,9 +160,9 @@ sub _after_init {
         my %args;
         $args{Reuse}   = 1;
         $args{Timeout} = $self->timeout;
-        if ($port =~ /^(?:0\.0\.0\.0)?:?(\d+)$/) {
+        if ($port =~ /^(?:0\.0\.0\.0|\*)?:?(\d+)$/) {
             $args{LocalPort} = $1;
-        } elsif ($port =~ /^(\d+\.\d+\.\d+\.\d+):(\d+)$/) {
+        } elsif ($port =~ /^([^:]+):(\d+)$/) {
             $args{LocalHost} = $1;
             $args{LocalPort} = $2;
         } else {
@@ -221,7 +222,11 @@ sub before_prefork {}
 
 sub _main_loop {
     my ($self) = @_;
-    $log->info("Child process started (PID $$)");
+    if ($self->_daemon->{parent_pid} == $$) {
+        $log->info("Entering main loop");
+    } else {
+        $log->info("Child process started (PID $$)");
+    }
     $self->_daemon->update_scoreboard({child_start_time=>time()});
 
     my $sel = IO::Select->new(@{ $self->_server_socks });
@@ -235,12 +240,12 @@ sub _main_loop {
             next unless $sock;
             $self->{_connect_time} = [gettimeofday];
             $self->_set_label_serving($sock);
-            $self->_daemon->update_scoreboard({
-                req_start_time => time(),
-                num_reqs => $i,
-                state => "R",
-            });
             while (1) {
+                $self->_daemon->update_scoreboard({
+                    req_start_time => time(),
+                    num_reqs => $i,
+                    state => "R",
+                });
                 $self->{_start_req_time} = [gettimeofday];
                 my $req = $sock->get_request;
                 $self->{_finish_req_time} = [gettimeofday];
@@ -580,7 +585,7 @@ Gepok - PSGI server with built-in HTTPS support, Unix sockets, preforking
 
 =head1 VERSION
 
-version 0.20
+version 0.21
 
 =head1 SYNOPSIS
 
