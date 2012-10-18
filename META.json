@@ -26,18 +26,20 @@
       },
       "runtime" : {
          "requires" : {
-            "Class::XSAccessor" : 0,
             "File::HomeDir" : 0,
             "HTTP::Daemon" : 0,
+            "HTTP::Daemon::Patch::IPv6" : 0,
             "HTTP::Daemon::SSL" : 0,
             "HTTP::Daemon::UNIX" : "0.03",
-            "HTTP::Daemon::patch::ipv6" : 0,
             "HTTP::Date" : 0,
             "HTTP::Status" : 0,
             "IO::Scalar" : 0,
             "Log::Any" : 0,
             "Moo" : 0,
-            "Plack" : 0,
+            "Net::SSL" : 0,
+            "Net::SSLeay" : 0,
+            "Plack::Test::Suite" : 0,
+            "Plack::Util" : 0,
             "SHARYANTO::Proc::Daemon::Prefork" : "0.05",
             "URI::Escape" : 0,
             "perl" : "5.010000"
@@ -56,6 +58,6 @@
          "url" : "http://github.com/sharyanto/perl-Gepok"
       }
    },
-   "version" : "0.22"
+   "version" : "0.23"
 }
 
