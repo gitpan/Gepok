@@ -5,10 +5,9 @@ use strict;
 use warnings;
 use Log::Any '$log';
 
-our $VERSION = '0.23'; # VERSION
+our $VERSION = '0.24'; # VERSION
 
 use File::HomeDir;
-use HTTP::Daemon;
 use HTTP::Daemon::Patch::IPv6;
 use HTTP::Daemon::SSL;
 use HTTP::Daemon::UNIX;
@@ -32,7 +31,7 @@ has name                   => (is => 'rw',
                                    $name;
                                });
 has daemonize              => (is => 'rw', default=>sub{1});
-has sock_path              => (is => 'rw');
+#has sock_path              => (is => 'rw');
 has pid_path               => (is => 'rw');
 has scoreboard_path        => (is => 'rw');
 has error_log_path         => (is => 'rw');
@@ -586,7 +585,7 @@ Gepok - PSGI server with built-in HTTPS support, Unix sockets, preforking
 
 =head1 VERSION
 
-version 0.23
+version 0.24
 
 =head1 SYNOPSIS
 
@@ -894,7 +893,7 @@ Steven Haryanto <stevenharyanto@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2012 by Steven Haryanto.
+This software is copyright (c) 2013 by Steven Haryanto.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

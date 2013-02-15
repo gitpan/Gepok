@@ -18,14 +18,13 @@ my %module_build_args = (
     "Steven Haryanto <stevenharyanto\@gmail.com>"
   ],
   "dist_name" => "Gepok",
-  "dist_version" => "0.23",
+  "dist_version" => "0.24",
   "license" => "perl",
   "module_name" => "Gepok",
   "recommends" => {},
   "recursive_test_files" => 1,
   "requires" => {
     "File::HomeDir" => 0,
-    "HTTP::Daemon" => 0,
     "HTTP::Daemon::Patch::IPv6" => 0,
     "HTTP::Daemon::SSL" => 0,
     "HTTP::Daemon::UNIX" => "0.03",

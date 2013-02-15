@@ -4,7 +4,7 @@
       "Steven Haryanto <stevenharyanto@gmail.com>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Dist::Zilla version 4.300006, CPAN::Meta::Converter version 2.113640",
+   "generated_by" : "Dist::Zilla version 4.300015, CPAN::Meta::Converter version 2.120921",
    "license" : [
       "perl_5"
    ],
@@ -24,24 +24,28 @@
             "Module::Build" : "0.3601"
          }
       },
+      "develop" : {
+         "requires" : {
+            "Test::Rinci" : "0.01"
+         }
+      },
       "runtime" : {
          "requires" : {
-            "File::HomeDir" : 0,
-            "HTTP::Daemon" : 0,
-            "HTTP::Daemon::Patch::IPv6" : 0,
-            "HTTP::Daemon::SSL" : 0,
+            "File::HomeDir" : "0",
+            "HTTP::Daemon::Patch::IPv6" : "0",
+            "HTTP::Daemon::SSL" : "0",
             "HTTP::Daemon::UNIX" : "0.03",
-            "HTTP::Date" : 0,
-            "HTTP::Status" : 0,
-            "IO::Scalar" : 0,
-            "Log::Any" : 0,
-            "Moo" : 0,
-            "Net::SSL" : 0,
-            "Net::SSLeay" : 0,
-            "Plack::Test::Suite" : 0,
-            "Plack::Util" : 0,
+            "HTTP::Date" : "0",
+            "HTTP::Status" : "0",
+            "IO::Scalar" : "0",
+            "Log::Any" : "0",
+            "Moo" : "0",
+            "Net::SSL" : "0",
+            "Net::SSLeay" : "0",
+            "Plack::Test::Suite" : "0",
+            "Plack::Util" : "0",
             "SHARYANTO::Proc::Daemon::Prefork" : "0.05",
-            "URI::Escape" : 0,
+            "URI::Escape" : "0",
             "perl" : "5.010000"
          }
       },
@@ -58,6 +62,6 @@
          "url" : "http://github.com/sharyanto/perl-Gepok"
       }
    },
-   "version" : "0.23"
+   "version" : "0.24"
 }
 

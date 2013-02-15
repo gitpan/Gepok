@@ -8,7 +8,7 @@ build_requires:
 configure_requires:
   Module::Build: 0.3601
 dynamic_config: 0
-generated_by: 'Dist::Zilla version 4.300006, CPAN::Meta::Converter version 2.113640'
+generated_by: 'Dist::Zilla version 4.300015, CPAN::Meta::Converter version 2.120921'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -16,7 +16,6 @@ meta-spec:
 name: Gepok
 requires:
   File::HomeDir: 0
-  HTTP::Daemon: 0
   HTTP::Daemon::Patch::IPv6: 0
   HTTP::Daemon::SSL: 0
   HTTP::Daemon::UNIX: 0.03
@@ -35,4 +34,4 @@ requires:
 resources:
   homepage: http://search.cpan.org/dist/Gepok/
   repository: http://github.com/sharyanto/perl-Gepok
-version: 0.23
+version: 0.24
