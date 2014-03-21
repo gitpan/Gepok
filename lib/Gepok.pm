@@ -1,11 +1,11 @@
 package Gepok;
 
-use 5.010;
+use 5.010001;
 use strict;
 use warnings;
 use Log::Any '$log';
 
-our $VERSION = '0.24'; # VERSION
+our $VERSION = '0.25'; # VERSION
 
 use File::HomeDir;
 use HTTP::Daemon::Patch::IPv6;
@@ -307,7 +307,7 @@ sub _finalize_response {
     my $chunked;
     my $cl = $headers{'content-length'};
     if ($client_proto eq 'HTTP/1.1') {
-        if ($status =~ /^[123]/ && (!defined($cl) || $cl)) {
+        if ($status =~ /^[123]/ && $status != 304 && (!defined($cl) || $cl)) {
             $chunked = 1;
         }
         if (my $te = $headers{'transfer-encoding'}) {
@@ -469,6 +469,7 @@ sub _prepare_env {
         'gepok.finish_request_time' => $self->{_finish_req_time},
         'gepok.client_protocol'     => $self->{_client_proto},
         'gepok.socket'              => $sock,
+        'gepok.httpd_socket'        => $httpd,
     };
     $env->{HTTPS} = 'on' if $is_ssl;
     if ($is_unix) {
@@ -576,8 +577,11 @@ sub access_log {
 
 # ABSTRACT: PSGI server with built-in HTTPS support, Unix sockets, preforking
 
+__END__
 
 =pod
+
+=encoding UTF-8
 
 =head1 NAME
 
@@ -585,7 +589,7 @@ Gepok - PSGI server with built-in HTTPS support, Unix sockets, preforking
 
 =head1 VERSION
 
-version 0.24
+version 0.25
 
 =head1 SYNOPSIS
 
@@ -663,9 +667,14 @@ used to avoid sending HTTP/1.1 response to HTTP/1.0 or older clients.
 =item * gepok.socket => OBJ
 
 Raw HTTP::Daemon::ClientConn socket. Can be used to get information about
-socket, e.g. peerport(), peercred(), etc. Should not be used to read/write data
-(use PSGI way for that, e.g. $env->{'psgi.input'}, returning PSGI response,
-etc).
+socket, e.g. peerport(), etc. Should not be used to read/write data (use PSGI
+way for that, e.g. $env->{'psgi.input'}, returning PSGI response, etc).
+
+=item * gepok.httpd_socket => OBJ
+
+Raw HTTP::Daemon socket. Can be used to get information about socket, e.g.
+peercred() (for UNIX sockets), etc. Should not be used to return HTTP response
+directly (use PSGI way for that).
 
 =item * gepok.unix_socket => BOOL
 
@@ -847,6 +856,23 @@ raw socket.
 Gepok is an Indonesian word, meaning bundle/bunch. This class bundles one or
 several HTTP::Daemon::* objects to create a stand-alone web server.
 
+=head2 Why use Gepok?
+
+The main feature for Gepok is builtin HTTPS support, which means you do not have
+to setup a separate front-end HTTPS proxy for serving content over HTTPS. This
+is convenient, especially for development. Builtin HTTPS support also makes some
+things easier to, e.g. check client certificates you can use the
+B<ssl_verify_callback> options. Your PSGI application also has direct access to
+the raw socket (C<< $env->{'gepok.socket'} >>).
+
+However, for heavy traffic use, you might want to check out more battle-tested
+solution like L<Perlbal>.
+
+There are now other PSGI servers that support HTTPS, see the SEE ALSO section.
+
+I personally developed Gepok for two reasons: HTTPS support and listening on
+Unix sockets.
+
 =head2 Performance notes?
 
 Thanks to preforking, Gepok has adequate performance and reliability handling
@@ -882,10 +908,41 @@ L<PSGI> and L<Plack>.
 HTTP server classes used: L<HTTP::Daemon>, L<HTTP::Daemon::SSL>,
 L<HTTP::Daemon::UNIX>.
 
-Alternative PSGI servers: L<Starman> (a high-performance preforking Perl
-HTTP/1.1 server which also supports Unix socket and multiple ports, but doesn't
-support HTTPS out-of-the-box), L<Starlet> (preforking and HTTP/1.1 but no
-multiple ports/Unix sockets/HTTPS).
+L<Perlbal>.
+
+Other PSGI servers that support Unix sockets: L<Starman>.
+
+Other PSGI servers that support HTTPS out of the box:
+
+=over
+
+=item * L<Plack::Handler::AnyEvent::HTTPD>
+
+As of Aug 2012 still needs a patch to allow SSL, see
+https://github.com/miyagawa/Plack-Handler-AnyEvent-HTTPD/pull/2#issuecomment-7046948
+
+=back
+
+Note that any PSGI server can be used if you setup a front-end HTTPS proxy/load
+balancer.
+
+Please drop me a message if you think other PSGI servers need to be mentioned.
+
+=head1 HOMEPAGE
+
+Please visit the project's homepage at L<https://metacpan.org/release/Gepok>.
+
+=head1 SOURCE
+
+Source repository is at L<https://github.com/sharyanto/perl-Gepok>.
+
+=head1 BUGS
+
+Please report any bugs or feature requests on the bugtracker website L<https://rt.cpan.org/Public/Dist/Display.html?Name=Gepok>
+
+When submitting a bug or request, please include a test-file or a
+patch to an existing test-file that illustrates the bug or desired
+feature.
 
 =head1 AUTHOR
 
@@ -893,13 +950,9 @@ Steven Haryanto <stevenharyanto@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2013 by Steven Haryanto.
+This software is copyright (c) 2014 by Steven Haryanto.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
-
-
-__END__
-
