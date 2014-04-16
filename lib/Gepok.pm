@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Log::Any '$log';
 
-our $VERSION = '0.25'; # VERSION
+our $VERSION = '0.26'; # VERSION
 
 use File::HomeDir;
 use HTTP::Daemon::Patch::IPv6;
@@ -265,9 +265,6 @@ sub _main_loop {
 sub _finalize_response {
     my($self, $env, $res, $sock) = @_;
 
-    # cache first before close
-    $self->{_sock_peerhost} = ${*$sock}{httpd_daemon}->peerhost // "127.0.0.1";
-
     if ($env->{'psgix.harakiri.commit'}) {
         $self->{_client_keepalive} = 0;
         $self->{_client_harakiri}  = 1;
@@ -404,6 +401,10 @@ sub _handle_psgi {
     my ($self, $req, $sock) = @_;
 
     my $env = $self->_prepare_env($req, $sock);
+
+    # cache first before socket closes
+    $self->{_sock_peerhost} = $env->{REMOTE_ADDR};
+
     my $res = Plack::Util::run_app($self->_app, $env);
 
     # trap i/o error when sending response
@@ -540,7 +541,7 @@ sub access_log {
 
     my $reqh = $req->headers;
     if ($log->is_trace) {
-        $log->tracef("\$self->{sock_peerhost}=%s, (gmtime(\$self->{_finish_req_time}))[0]=%s, \$req->method=%s, \$req->uri->as_string=%s, \$self->{_res_status}=%s, \$self->{res_content_length}=%s, ".
+        $log->tracef("\$self->{_sock_peerhost}=%s, (gmtime(\$self->{_finish_req_time}))[0]=%s, \$req->method=%s, \$req->uri->as_string=%s, \$self->{_res_status}=%s, \$self->{res_content_length}=%s, ".
                          "\$reqh->header('referer')=%s, \$reqh->header('user-agent')=%s",
                      $self->{_sock_peerhost},
                      (gmtime($self->{_finish_req_time}))[0],
@@ -589,7 +590,7 @@ Gepok - PSGI server with built-in HTTPS support, Unix sockets, preforking
 
 =head1 VERSION
 
-version 0.25
+version 0.26
 
 =head1 SYNOPSIS
 
