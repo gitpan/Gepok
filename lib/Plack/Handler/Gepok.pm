@@ -6,7 +6,7 @@ use warnings;
 
 use Gepok;
 
-our $VERSION = '0.26'; # VERSION
+our $VERSION = '0.27'; # VERSION
 
 sub new {
     my $class = shift;
@@ -43,7 +43,7 @@ Plack::Handler::Gepok - Plack adapter for Gepok
 
 =head1 VERSION
 
-version 0.26
+This document describes version 0.27 of Plack::Handler::Gepok (from Perl distribution Gepok), released on 2014-06-03.
 
 =head1 SYNOPSIS
 

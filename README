@@ -3,7 +3,8 @@ NAME
     preforking
 
 VERSION
-    version 0.26
+    This document describes version 0.27 of Gepok (from Perl distribution
+    Gepok), released on 2014-06-03.
 
 SYNOPSIS
     To run with plackup:

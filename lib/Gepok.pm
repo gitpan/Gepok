@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Log::Any '$log';
 
-our $VERSION = '0.26'; # VERSION
+our $VERSION = '0.27'; # VERSION
 
 use File::HomeDir;
 use HTTP::Daemon::Patch::IPv6;
@@ -180,7 +180,10 @@ sub _after_init {
     for my $port (@$ary) {
         my %args;
         $args{Reuse}   = 1;
-        $args{Timeout} = $self->timeout; # can hang with larger POST?
+
+        # temporarily not passing Timeout param because this does make
+        # request/packet larger than 2k hangs
+        #$args{Timeout} = $self->timeout; # can hang with larger POST?
 
         $args{SSL_key_file}  = $self->ssl_key_file;
         $args{SSL_cert_file} = $self->ssl_cert_file;
@@ -590,7 +593,7 @@ Gepok - PSGI server with built-in HTTPS support, Unix sockets, preforking
 
 =head1 VERSION
 
-version 0.26
+This document describes version 0.27 of Gepok (from Perl distribution Gepok), released on 2014-06-03.
 
 =head1 SYNOPSIS
 
