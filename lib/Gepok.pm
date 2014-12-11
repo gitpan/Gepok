@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Log::Any '$log';
 
-our $VERSION = '0.27'; # VERSION
+our $VERSION = '0.28'; # VERSION
 
 use File::HomeDir;
 use HTTP::Daemon::Patch::IPv6;
@@ -18,7 +18,7 @@ use IO::Select;
 use IO::Socket qw(:crlf);
 use Plack::Util;
 use POSIX;
-use SHARYANTO::Proc::Daemon::Prefork;
+use Proc::Daemon::Prefork;
 use Time::HiRes qw(gettimeofday);
 use URI::Escape;
 
@@ -46,7 +46,7 @@ has ssl_cert_file          => (is => 'rw');
 has start_servers          => (is => 'rw', default => sub{3});
 has max_clients            => (is => 'rw', default=>sub{150});
 has max_requests_per_child => (is => 'rw', default=>sub{1000});
-has _daemon                => (is => 'rw'); # SHARYANTO::Proc::Daemon::Prefork
+has _daemon                => (is => 'rw'); # Proc::Daemon::Prefork
 has _server_socks          => (is => 'rw'); # store server sockets
 has _app                   => (is => 'rw'); # store PSGI app
 has product_name           => (is => 'rw');
@@ -86,7 +86,7 @@ sub BUILD {
         die "ssl_verify_callback needs to be a coderef, or constant '1' or '0'" unless ref $vc eq 'CODE';
     }
     unless ($self->_daemon) {
-        my $daemon = SHARYANTO::Proc::Daemon::Prefork->new(
+        my $daemon = Proc::Daemon::Prefork->new(
             name                    => $self->name,
             error_log_path          => $self->error_log_path,
             access_log_path         => $self->access_log_path,
@@ -593,7 +593,7 @@ Gepok - PSGI server with built-in HTTPS support, Unix sockets, preforking
 
 =head1 VERSION
 
-This document describes version 0.27 of Gepok (from Perl distribution Gepok), released on 2014-06-03.
+This document describes version 0.28 of Gepok (from Perl distribution Gepok), released on 2014-12-11.
 
 =head1 SYNOPSIS
 
@@ -641,10 +641,6 @@ Good performance and reliability.
 =back
 
 Gepok can run under B<plackup>, or standalone.
-
-This module uses L<Log::Any> for logging.
-
-This module uses L<Moo> for object system.
 
 =head1 PSGI ENVIRONMENT
 
@@ -729,7 +725,7 @@ Socket timeout. Will be passed as Timeout option to HTTP::Daemon's constructor
 
 Whether to require running as root.
 
-Passed to SHARYANTO::Proc::Daemon::Prefork's constructor.
+Passed to Proc::Daemon::Prefork's constructor.
 
 =head2 pid_path => STR (default /var/run/<name>.pid or ~/<name>.pid)
 
@@ -938,7 +934,7 @@ Please visit the project's homepage at L<https://metacpan.org/release/Gepok>.
 
 =head1 SOURCE
 
-Source repository is at L<https://github.com/sharyanto/perl-Gepok>.
+Source repository is at L<https://github.com/perlancar/perl-Gepok>.
 
 =head1 BUGS
 
@@ -950,11 +946,11 @@ feature.
 
 =head1 AUTHOR
 
-Steven Haryanto <stevenharyanto@gmail.com>
+perlancar <perlancar@cpan.org>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2014 by Steven Haryanto.
+This software is copyright (c) 2014 by perlancar@cpan.org.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

@@ -3,8 +3,8 @@ NAME
     preforking
 
 VERSION
-    This document describes version 0.27 of Gepok (from Perl distribution
-    Gepok), released on 2014-06-03.
+    This document describes version 0.28 of Gepok (from Perl distribution
+    Gepok), released on 2014-12-11.
 
 SYNOPSIS
     To run with plackup:
@@ -47,10 +47,6 @@ DESCRIPTION
     *   Runs on Unix platform
 
     Gepok can run under plackup, or standalone.
-
-    This module uses Log::Any for logging.
-
-    This module uses Moo for object system.
 
 PSGI ENVIRONMENT
     Gepok adds the following server-specific keys in the PSGI environment
@@ -126,7 +122,7 @@ ATTRIBUTES
   require_root => BOOL (default 0)
     Whether to require running as root.
 
-    Passed to SHARYANTO::Proc::Daemon::Prefork's constructor.
+    Passed to Proc::Daemon::Prefork's constructor.
 
   pid_path => STR (default /var/run/<name>.pid or ~/<name>.pid)
     Location of PID file.
@@ -304,7 +300,7 @@ HOMEPAGE
     <https://metacpan.org/release/Gepok>.
 
 SOURCE
-    Source repository is at <https://github.com/sharyanto/perl-Gepok>.
+    Source repository is at <https://github.com/perlancar/perl-Gepok>.
 
 BUGS
     Please report any bugs or feature requests on the bugtracker website
@@ -314,10 +310,10 @@ BUGS
     to an existing test-file that illustrates the bug or desired feature.
 
 AUTHOR
-    Steven Haryanto <stevenharyanto@gmail.com>
+    perlancar <perlancar@cpan.org>
 
 COPYRIGHT AND LICENSE
-    This software is copyright (c) 2014 by Steven Haryanto.
+    This software is copyright (c) 2014 by perlancar@cpan.org.
 
     This is free software; you can redistribute it and/or modify it under
     the same terms as the Perl 5 programming language system itself.

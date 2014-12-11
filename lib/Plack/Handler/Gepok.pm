@@ -6,7 +6,7 @@ use warnings;
 
 use Gepok;
 
-our $VERSION = '0.27'; # VERSION
+our $VERSION = '0.28'; # VERSION
 
 sub new {
     my $class = shift;
@@ -43,7 +43,7 @@ Plack::Handler::Gepok - Plack adapter for Gepok
 
 =head1 VERSION
 
-This document describes version 0.27 of Plack::Handler::Gepok (from Perl distribution Gepok), released on 2014-06-03.
+This document describes version 0.28 of Plack::Handler::Gepok (from Perl distribution Gepok), released on 2014-12-11.
 
 =head1 SYNOPSIS
 
@@ -61,7 +61,7 @@ Please visit the project's homepage at L<https://metacpan.org/release/Gepok>.
 
 =head1 SOURCE
 
-Source repository is at L<https://github.com/sharyanto/perl-Gepok>.
+Source repository is at L<https://github.com/perlancar/perl-Gepok>.
 
 =head1 BUGS
 
@@ -73,11 +73,11 @@ feature.
 
 =head1 AUTHOR
 
-Steven Haryanto <stevenharyanto@gmail.com>
+perlancar <perlancar@cpan.org>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2014 by Steven Haryanto.
+This software is copyright (c) 2014 by perlancar@cpan.org.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
